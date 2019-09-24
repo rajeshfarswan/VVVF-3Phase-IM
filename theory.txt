@@ -1,0 +1,143 @@
+///////////////////////////////////////////////////////////////////////
+    
+// actual calculations for motor having specifications below///////////
+// kw 1.2, v 220, rpm 1500, a 5.12, 50Hz, delta connection, 4 pole   //
+//                                                                  //
+/////////////////////////////////////////////////////////////////////
+
+Kf = 220/50 = 4.4    ---------(0) //motor constant ratio = rated speed/rated frequency
+
+for sine PWM
+
+V(LL) = (sqrt(3)/(2*sqrt(2)))*Vdc*m*Mmax   ------------(1)
+        where,
+        Vdc = dc link voltage
+        m = modulation index
+        Mmax = 1
+
+V(LL)max = 226.58Vac
+Fmax = 226.58/4.4 = 51.5Hz
+
+define, Ci = K1*F ---------------(2)
+        
+        K1 = Cimax/Fmax
+        where,
+        Ci = input reference counts for speed
+        F = output frequency
+        Cimax = 51.5*36.7521 = 1893 
+        Fmax = 51.5Hz
+
+define , Cv = K2*Vdc --------------(3)
+       
+         K2 = Cvmax/Vdcmax = 2046/400 = 5.115
+         where,
+         Cv = ADC counts for DC link voltage
+         Vdc = Vdc1+Vdc2, DC link total voltage
+         Cvmax = 1023+1023 = 2046  //summation of two adc values = total adc value
+
+         Vdcmax = 400v
+
+substitute (3) in (1)
+
+V(LL) = ((sqrt(3)/(2*sqrt(2)))*Cv*m*Mmax)/K2    --------(4)
+
+substitute (0) in (4)
+
+Kf*F = ((sqrt(3)/(2*sqrt(2)))*Cv*m*Mmax)/K2   ------(5)
+
+substitute (2) in (5)
+
+(Kf*Ci)/K1 = ((sqrt(3)/(2*sqrt(2)))*Cv*m*Mmax)/K2
+
+solve for m,
+
+m = (Kf*Ci*K2)/(K1*(sqrt(3)/(2*sqrt(2)))*Cv*m*Mmax)
+
+m = [((2*sqrt(2))*kf*K2)/(sqrt(3)*K1*Mmax)]*(Ci/Cv)
+
+m = K3*(Ci/Cv)  -------------(6)
+
+m = Ci/Cv
+ 
+where, 
+     K3 = ((2*sqrt(2))*kf*K2)/(sqrt(3)*K1*Mmax)  ------(7)
+
+if K1 is such that, K3 = 1  (*find K1 for K3 = 1)   (K1 = 36.7521 for K3 = 1)
+
+then,
+
+m = Ci/Cv  -----------------(8)
+[* m (Modulation variable in main.c)
+   Ci (SPEEDREF in main.h and SpeedRef variable in main.c )
+   Cv (Vavg variable in main.c)
+
+///////////////////////////////////////////////////////////
+
+// calculate frequency //
+
+f = 1/(P*S*Cr)   -------(9)
+
+where,
+      P = timer period in us (PR1 in init.c)
+      S = no. of samples (samples in main.h)
+      Cr = sampling counter value
+
+substitute (2) in (9)
+
+Ci/K1 = 1/(P*S*Cr) 
+
+or 
+
+Cr = (K1/P*S)*(1/Ci)
+
+or 
+
+Cr = K4/Ci
+
+Cr = 61253/Ci
+
+[* Cr (Frequency variable in main.c)
+   K4 (CONST_K4 in main.h and CONSTANT_K4 variable in main.c)
+
+where,
+     K4 = K1/(P*S)
+     K4 = 36.7521/(10us*60) = 61253
+
+////////////////////////////////////////////////////////////
+
+P = (120*Frated)/Srated
+    where,
+    P = 4
+    Frated = rated frequency
+    srated = rated speed in rpn
+
+S = (120/(P*K1))*Ci
+
+S= K5*Ci
+
+S = 0.8162*Ci
+
+where, 
+   K5 = 120/(P*K1)
+      = 120/(4*36.7521)
+      = 0.8162
+where,
+   S = speed of motor in rpm
+   
+////////////////////////////////////////////////////////////
+
+on line settings
+
+ip ac voltage = 230Vac single phase
+VDCmax available = 325
+consider 300Vdc available during load
+
+V(ll)rms that can be obtained = 184vac
+therefore frequency for above voltage = 184/4.4 = 42Hz
+
+therefore setcount for speed reference Ci = 1544 or 1260rpm //set SPEEDREF in main.h
+
+
+////////////////////////////////////////////////////////////
+
+

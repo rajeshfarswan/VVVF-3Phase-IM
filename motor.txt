@@ -1,0 +1,3 @@
+test bench motor
+
+kw 1.2, v 220, rpm 1427, a 5.12, 50Hz, delta connection, 4 pole
